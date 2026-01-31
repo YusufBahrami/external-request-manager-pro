@@ -4,7 +4,7 @@
  * Plugin URI: https://github.com/YusufBahrami/external-request-manager-pro
  * Description: Advanced external HTTP requests monitor, blocker & manager with professional UI, detailed analytics, and comprehensive controls.
  * Version: 2.0.0
- * Author: Yousuf Bahrami
+ * Author: Yusuf Bahrami
  * Author URI: https://wcoq.com/
  * License: GPL-2.0+
  * Text Domain: erm-pro

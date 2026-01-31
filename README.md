@@ -292,13 +292,13 @@ Contributions are welcome! Please:
 
 ## 📧 Support
 
-For bug reports and feature requests, please use the [GitHub Issues](https://github.com/yourusername/external-request-manager-pro/issues) page.
+For bug reports and feature requests, please use the [GitHub Issues](https://github.com/YusufBahrami/external-request-manager-pro/issues) page.
 
 ## 👨‍💻 Author
 
-**Yousuf Bahrami**
+**Yusuf Bahrami**
 - Website: https://wcoq.com/
-- GitHub: @yourusername
+- GitHub: @YusufBahrami
 
 ---
 

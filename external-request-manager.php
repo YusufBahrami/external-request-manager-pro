@@ -1,7 +1,7 @@
 <?php
 /**
  * Plugin Name: External Request Manager Pro
- * Plugin URI: https://github.com/yourusername/external-request-manager-pro
+ * Plugin URI: https://github.com/YusufBahrami/external-request-manager-pro
  * Description: Advanced external HTTP requests monitor, blocker & manager with professional UI, detailed analytics, and comprehensive controls.
  * Version: 2.0.0
  * Author: Yousuf Bahrami
@@ -9,7 +9,7 @@
  * License: GPL-2.0+
  * Text Domain: erm-pro
  * Domain Path: /languages
- * GitHub Plugin URI: yourusername/external-request-manager-pro
+ * GitHub Plugin URI: YusufBahrami/external-request-manager-pro
  * Requires at least: 5.0
  * Requires PHP: 7.2
  */

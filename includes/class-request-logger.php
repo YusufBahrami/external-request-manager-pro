@@ -74,7 +74,7 @@ class ERM_Request_Logger {
         }
         
         // Simple check - can be enhanced with transients for more accuracy
-        return false; // Placeholder for rate limiting logic
+        return false;
     }
     
     public static function log_request($host, $url, $args = []) {
@@ -116,7 +116,7 @@ class ERM_Request_Logger {
                 
                 $urls_log = implode("\n", $urls_array);
             } else {
-                $urls_log = $urls_log; // Keep existing
+                $urls_log = $urls_log;
             }
         } elseif ($track_all_urls) {
             $urls_log = $url;
@@ -125,7 +125,7 @@ class ERM_Request_Logger {
         if ($existing) {
             // Update existing entry
             $update_data = [
-                'request_count' => new \WP_Query(), // Will use SQL expression
+                'request_count' => new \WP_Query(),
                 'last_timestamp' => $now,
                 'url_example' => $url,
                 'request_size' => $request_size,

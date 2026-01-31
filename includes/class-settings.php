@@ -152,12 +152,12 @@ class ERM_Settings {
     
     public static function sanitize_per_page($value) {
         $value = (int) $value;
-        return max(5, min(200, $value)); // Between 5 and 200
+        return max(5, min(200, $value));
     }
     
     public static function sanitize_max_urls($value) {
         $value = (int) $value;
-        return max(1, min(100, $value)); // Between 1 and 100
+        return max(1, min(100, $value));
     }
     
     public static function sanitize_columns($value) {

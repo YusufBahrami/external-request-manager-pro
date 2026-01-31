@@ -12,29 +12,21 @@
         },
 
         bindEvents: function() {
-            // Select all checkbox
             $(document).on('change', '#erm-select-all', this.toggleSelectAll.bind(this));
 
-            // Individual checkboxes
             $(document).on('change', '.erm-request-checkbox', this.updateSelectAll.bind(this));
 
-            // Bulk action
             $(document).on('click', '#erm-apply-bulk-action', this.applyBulkAction.bind(this));
 
-            // Toggle block/unblock
             $(document).on('click', '.erm-toggle-block-btn', this.toggleBlock.bind(this));
 
-            // Delete
             $(document).on('click', '.erm-delete-btn', this.deleteItem.bind(this));
 
-            // Review/Detail
             $(document).on('click', '.erm-review-btn', this.showDetail.bind(this));
 
-            // Clear logs
             $(document).on('click', '#erm-clear-all-btn', this.showClearModal.bind(this));
             $(document).on('click', '#erm-confirm-clear-btn', this.clearLogs.bind(this));
 
-            // Modal close
             $(document).on('click', '.erm-modal-close, .erm-modal-close-btn', this.closeModal.bind(this));
             $(document).on('click', '.erm-modal', this.closeModalOnBackdrop.bind(this));
         },

@@ -9,40 +9,39 @@ A professional WordPress plugin for monitoring, analyzing, and controlling exter
 ## ✨ Features
 
 ### Request Monitoring
-- 🔍 **Real-time Tracking**: Monitor all external HTTP requests in real-time
-- 📊 **Detailed Analytics**: View request count, frequency, methods, and response sizes
-- 🏷️ **Source Identification**: Automatically identify requests from plugins, themes, or WordPress core
-- 🔗 **Request Details**: Inspect full request URLs, methods, sizes, and response codes
-- ⏱️ **Temporal Analysis**: Track first seen and last seen timestamps
+- **Real-time Tracking**: Monitor all external HTTP requests in real-time
+- **Detailed Analytics**: View request count, frequency, methods, and response sizes
+- **Source Identification**: Automatically identify requests from plugins, themes, or WordPress core
+- **Request Details**: Inspect full request URLs, methods, sizes, and response codes
+- **Temporal Analysis**: Track first seen and last seen timestamps
 
 ### Request Management
-- ✅ **Flexible Blocking**: Block or allow specific external hosts
-- 🚫 **Soft Delete**: Mark requests as deleted without losing history
-- 🔄 **Bulk Operations**: Block, unblock, or delete multiple requests at once
-- 📝 **Request Review**: Comprehensive review modal with all request details
-- 🎯 **Rate Limiting**: Set custom rate limits per host (calls per interval)- 🔗 **Separate by Method**: Track GET and POST requests separately
-- 📊 **URL Logging**: Optional tracking of all unique URLs per request (configurable limit)
-- 📋 **URL Review Dropdown**: View all logged URLs in the review modal
-- 🎮 **In-Modal Actions**: Block, delete, or save rate limits directly from review modal
+- **Flexible Blocking**: Block or allow specific external hosts
+- **Soft Delete**: Mark requests as deleted without losing history
+- **Bulk Operations**: Block, unblock, or delete multiple requests at once
+- **Request Review**: Comprehensive review modal with all request details
+- **Rate Limiting**: Set custom rate limits per host (calls per interval)- 🔗 **Separate by Method**: Track GET and POST requests separately
+- **URL Logging**: Optional tracking of all unique URLs per request (configurable limit)
+- **URL Review Dropdown**: View all logged URLs in the review modal
+- **In-Modal Actions**: Block, delete, or save rate limits directly from review modal
+
 ### Professional UI
-- 🎨 **Modern Dashboard**: Clean, responsive interface with statistics cards
-- 📱 **Mobile Responsive**: Fully optimized for all screen sizes
-- 🔧 **Advanced Filtering**: Filter by status (blocked/allowed) and search hosts
-- ⚙️ **Customizable Columns**: Choose which columns to display in the table
-- 📄 **Professional Pagination**: Configurable items per page (5-200)
+- **Advanced Filtering**: Filter by status (blocked/allowed) and search hosts
+- **Customizable Columns**: Choose which columns to display in the table
+- **Professional Pagination**: Configurable items per page (5-200)
 
 ### Settings & Configuration
-- 💾 **Log Retention**: Configurable log retention period (0 = forever)
-- 🧹 **Auto-Cleanup**: Automatically delete old logs based on retention policy
-- 🔔 **Notifications**: Optional admin notifications for detected requests
-- ⚡ **Performance**: Indexed database tables for fast queries
-- 🔐 **Security**: Nonce verification, capability checks, and proper sanitization
+- **Log Retention**: Configurable log retention period (0 = forever)
+- **Auto-Cleanup**: Automatically delete old logs based on retention policy
+- **Notifications**: Optional admin notifications for detected requests
+- **Performance**: Indexed database tables for fast queries
+- **Security**: Nonce verification, capability checks, and proper sanitization
 
 ### Database & Logs
-- 📦 **Comprehensive Logging**: Detailed request information stored in dedicated tables
-- 🗑️ **Deleted Log**: Track deleted entries with deletion metadata
-- 🔄 **Soft Delete Pattern**: Deleted items remain in database for audit trail
-- 📊 **Status Counts**: Real-time counts of total, blocked, and allowed requests
+- **Comprehensive Logging**: Detailed request information stored in dedicated tables
+- **Deleted Log**: Track deleted entries with deletion metadata
+- **Soft Delete Pattern**: Deleted items remain in database for audit trail
+- **Status Counts**: Real-time counts of total, blocked, and allowed requests
 
 ## 🚀 Installation
 
@@ -97,7 +96,7 @@ Two options available:
 1. **Clear All Except Blocked**: Remove allowed entries, keep blocked for reference
 2. **Clear All & Unblock**: Remove all entries and unblock all hosts
 
-## 🏗️ Architecture
+## Architecture
 
 ### File Structure
 ```
@@ -108,6 +107,7 @@ external-request-manager-pro/
 │   ├── class-request-logger.php       # Request interception & logging
 │   ├── class-admin-pages.php          # Admin pages setup
 │   ├── class-settings.php             # Settings management
+│   ├── helpers.php                    # Helpers
 │   └── class-ajax.php                 # AJAX handlers
 ├── templates/
 │   ├── dashboard.php                  # Main dashboard template

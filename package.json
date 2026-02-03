@@ -1,13 +1,13 @@
 {
   "name": "external-request-manager-pro",
-  "version": "2.0.0",
+  "version": "2.5.3",
   "description": "Advanced external HTTP requests monitor, blocker & manager with professional UI, detailed analytics, and comprehensive controls",
-  "author": "Yousuf Bahrami",
+  "author": "yusuf Bahrami",
   "license": "GPL-2.0+",
-  "homepage": "https://github.com/yourusername/external-request-manager-pro",
+  "homepage": "https://github.com/yusufbahrami/external-request-manager-pro",
   "repository": {
     "type": "git",
-    "url": "https://github.com/yourusername/external-request-manager-pro.git"
+    "url": "https://github.com/yusufbahrami/external-request-manager-pro.git"
   },
   "devDependencies": {
     "@wordpress/scripts": "^24.0.0"

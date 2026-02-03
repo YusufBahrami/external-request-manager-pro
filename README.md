@@ -1,6 +1,6 @@
 # External Request Manager Pro
 
-![Version](https://img.shields.io/badge/version-2.0.0-blue.svg)
+![Version](https://img.shields.io/badge/version-2.5.3-blue.svg)
 ![License](https://img.shields.io/badge/license-GPL--2.0+-green.svg)
 ![WordPress](https://img.shields.io/badge/WordPress-5.0+-blue.svg)
 
@@ -18,6 +18,7 @@ A professional WordPress plugin for monitoring, analyzing, and controlling exter
 ### Request Management
 - **Flexible Blocking**: Block or allow specific external hosts
 - **Soft Delete**: Mark requests as deleted without losing history
+ - **Hard Delete with Audit**: Permanently remove entries and record deletion metadata in a dedicated audit table (`wp_external_requests_deleted`).
 - **Bulk Operations**: Block, unblock, or delete multiple requests at once
 - **Request Review**: Comprehensive review modal with all request details
 - **Rate Limiting**: Set custom rate limits per host (calls per interval)
@@ -41,7 +42,8 @@ A professional WordPress plugin for monitoring, analyzing, and controlling exter
 ### Database & Logs
 - **Comprehensive Logging**: Detailed request information stored in dedicated tables
 - **Deleted Log**: Track deleted entries with deletion metadata
-- **Soft Delete Pattern**: Deleted items remain in database for audit trail
+ - **Deleted Log**: Track deleted entries with deletion metadata in `wp_external_requests_deleted`.
+ - **Hard Delete**: Deleted items are permanently removed from the main log table and an audit record is inserted into the deleted table.
 - **Status Counts**: Real-time counts of total, blocked, and allowed requests
 
 ## 🚀 Installation
@@ -91,6 +93,8 @@ Configure the plugin behavior:
 - **Log Retention Period**: Days to keep logs (0 = forever)
 - **Auto-Clean**: Enable automatic deletion of old logs
 - **Notifications**: Toggle admin notifications
+- **Track Response**: Toggle whether response details (code/time/body) are stored (`erm_pro_track_response`).
+- **Max Response Body Length**: Integer byte limit for stored response bodies (`erm_pro_max_response_body_length`). Set to `0` to disable storing response bodies.
 
 ### Clear Logs
 Two options available:
@@ -113,6 +117,7 @@ external-request-manager-pro/
 ├── templates/
 │   ├── dashboard.php                  # Main dashboard template
 │   └── settings.php                   # Settings page template
+│   ├── deleted.php                    # Deleted Records template
 ├── assets/
 │   ├── css/
 │   │   └── admin.css                  # Admin styling
@@ -262,18 +267,26 @@ do_action('erm_pro_cleanup', $deleted_count);
 
 ## 📝 Changelog
 
-### Version 2.0.0 – Q1 2026
-- Complete rewrite with modular architecture
-- Added request source detection (plugin/theme)
-- Implemented professional control panel
-- Added rate limiting support
-- Improved database schema
-- Added soft delete functionality
-- Professional UI with statistics cards
-- Advanced filtering and search
-- Customizable columns and pagination
-- AJAX-powered bulk operations
-- Comprehensive request details modal
+### Changelog
+
+#### v2.0.1 — 2026-02-02
+- Fix: Correct request counts after Clear/Clear Except operations.
+- Ajax responses now include updated counts so the UI stays in sync.
+- JS: `updateStats()` added to refresh dashboard counts without full reload.
+- Templates and ajax handlers updated to return counts on clear/toggle actions.
+
+#### v2.0.0 — 2026-02-02
+- Feature: Replace soft-deletes with hard deletion and add audit trail table `wp_external_requests_deleted`.
+    - Audit columns: `id`, `host`, `url_example`, `was_blocked`, `deleted_timestamp`, `deleted_by_user`.
+    - Deleted entries admin page added (`templates/deleted.php`).
+- Improvement: Capture response details (response code, response time, response body) more robustly.
+    - Added `response_body` column (LONGTEXT) and truncation per setting.
+    - Detail modal shows response data and offers "Download Full Response".
+- Setting: `erm_pro_track_response` toggle and new `erm_pro_max_response_body_length` setting to control stored response size.
+- Safety: Do not auto-run destructive DB upgrades on plugin load.
+    - Added manual Database Updater UI with `ERM_Database::upgrade()` and an admin AJAX endpoint to trigger it.
+    - Added `ERM_PRO_DB_VERSION` to decouple DB schema version from plugin release version.
+- Misc: Admin notices for DB upgrades and host notices; side-panel ordering and CSS polish for Settings.
 
 ### Version 1.2.1 - Previous
 - Basic request monitoring and blocking

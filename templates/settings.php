@@ -20,6 +20,24 @@ if (!defined('ABSPATH')) exit;
             submit_button(esc_html__('Save Settings', 'erm-pro'), 'primary');
             ?>
         </form>
+
+        <!-- Side Panel: Database Updater, Maintenance, About -->
+        <aside class="erm-side-panel">
+        <!-- Database Updater -->
+        <div class="erm-settings-section erm-database-updater">
+            <h2><?php echo esc_html__('Database Updater', 'erm-pro'); ?></h2>
+            <p><?php echo esc_html__('Plugin version:', 'erm-pro'); ?> <strong><?php echo esc_html(ERM_PRO_VERSION); ?></strong></p>
+            <p><?php echo esc_html__('DB schema version:', 'erm-pro'); ?> <strong><?php echo esc_html(ERM_PRO_DB_VERSION); ?></strong></p>
+            <p><?php echo esc_html__('Installed DB version:', 'erm-pro'); ?> <strong><?php echo esc_html(get_option('ERM_PRO_DB_VERSION', '1.0')); ?></strong></p>
+            <?php $installed_db = get_option('erm_pro_db_version', ''); ?>
+            <?php if ($installed_db !== ERM_PRO_DB_VERSION): ?>
+                <p class="description" style="color:#a00;"><?php echo esc_html__('Your database schema is out of date. Run the updater to safely apply schema changes without losing user data.', 'erm-pro'); ?></p>
+                <button id="erm-run-db-upgrade" class="button button-primary"><?php echo esc_html__('Run DB Updater', 'erm-pro'); ?></button>
+                <span id="erm-db-upgrade-status" style="margin-left:10px;"></span>
+            <?php else: ?>
+                <p class="description" style="color:#060;"><?php echo esc_html__('Database is up to date.', 'erm-pro'); ?></p>
+            <?php endif; ?>
+        </div>
         
         <!-- Maintenance Section -->
         <div class="erm-settings-section erm-maintenance-section">
@@ -30,15 +48,18 @@ if (!defined('ABSPATH')) exit;
                 <p><?php echo esc_html__('Manage your request logs:', 'erm-pro'); ?></p>
                 
                 <div class="erm-maintenance-options">
-                    <button type="button" class="button button-secondary" id="erm-clear-except-btn">
+                    <button type="button" class="button button-secondary" id="erm-settings-clear-except-btn">
                         <span class="dashicons dashicons-trash"></span>
                         <?php echo esc_html__('Clear All Except Blocked', 'erm-pro'); ?>
                     </button>
                     
-                    <button type="button" class="button button-link-delete" id="erm-clear-all-btn">
+                    <button type="button" class="button button-link-delete" id="erm-settings-clear-all-btn">
                         <span class="dashicons dashicons-trash"></span>
                         <?php echo esc_html__('Clear All & Unblock', 'erm-pro'); ?>
                     </button>
+                    <p style="font-size: 12px; color: #666; margin-top: 10px;">
+                        💡 <?php echo esc_html__('These actions cannot be undone. All logs will be permanently deleted.', 'erm-pro'); ?>
+                    </p>
                 </div>
             </div>
             
@@ -46,12 +67,11 @@ if (!defined('ABSPATH')) exit;
                 <h3><?php echo esc_html__('Database Info', 'erm-pro'); ?></h3>
                 <p>
                     <?php 
-                    global $wpdb;
-                    $table = $wpdb->prefix . ERM_PRO_TABLE_REQUESTS;
-                    $count = $wpdb->get_var("SELECT COUNT(*) FROM $table");
+                    // Get correct count of only non-deleted requests
+                    $counts = ERM_Database::count_by_status();
                     printf(
                         esc_html__('Total requests logged: %d', 'erm-pro'),
-                        number_format($count)
+                        number_format($counts['total'])
                     );
                     ?>
                 </p>
@@ -68,12 +88,13 @@ if (!defined('ABSPATH')) exit;
                 <?php echo esc_html__('A professional WordPress plugin for monitoring and managing external HTTP requests.', 'erm-pro'); ?>
             </p>
             <p>
-                <a href="https://github.com/yourusername/external-request-manager-pro" target="_blank" class="button button-secondary">
+                <a href="https://github.com/yusufbahrami/external-request-manager-pro" target="_blank" class="button button-secondary">
                     <span class="dashicons dashicons-admin-links"></span>
                     <?php echo esc_html__('GitHub Repository', 'erm-pro'); ?>
                 </a>
             </p>
         </div>
+        </aside>
     </div>
     
     <!-- Back to Dashboard -->
@@ -85,42 +106,25 @@ if (!defined('ABSPATH')) exit;
     </div>
 </div>
 
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    const clearExceptBtn = document.getElementById('erm-clear-except-btn');
-    const clearAllBtn = document.getElementById('erm-clear-all-btn');
-    
-    if (clearExceptBtn) {
-        clearExceptBtn.addEventListener('click', function(e) {
-            e.preventDefault();
-            if (confirm('<?php esc_attr_e('Clear all allowed logs? Blocked entries will remain.', 'erm-pro'); ?>')) {
-                ermClearLogs('except_blocked');
-            }
-        });
-    }
-    
-    if (clearAllBtn) {
-        clearAllBtn.addEventListener('click', function(e) {
-            e.preventDefault();
-            if (confirm('<?php esc_attr_e('Clear ALL logs including blocked? This cannot be undone.', 'erm-pro'); ?>')) {
-                ermClearLogs('all');
-            }
-        });
-    }
-});
-
-function ermClearLogs(mode) {
-    jQuery.post(ermProData.ajaxUrl, {
-        action: 'erm_clear_logs',
-        nonce: ermProData.nonce,
-        mode: mode
-    }, function(response) {
-        if (response.success) {
-            alert(response.data.message);
-            location.reload();
-        } else {
-            alert(response.data.message || '<?php esc_attr_e('Error', 'erm-pro'); ?>');
-        }
-    });
-}
-</script>
+<!-- Settings Clear Confirmation Modal -->
+<div id="erm-settings-confirm-modal" class="erm-modal hidden">
+    <div class="erm-modal-content">
+        <div class="erm-modal-header">
+            <h2><?php echo esc_html__('Clear Logs Confirmation', 'erm-pro'); ?></h2>
+            <button type="button" class="erm-modal-close" data-action="close">&times;</button>
+        </div>
+        <div class="erm-modal-body">
+            <div id="erm-settings-confirm-message" style="margin-bottom: 15px;"></div>
+            <div class="erm-warning-box" style="margin-top: 15px; padding: 10px; background: #fff8e5; border-left: 4px solid #ffb81c; border-radius: 4px;">
+                <p style="margin: 0; color: #856404;">
+                    <strong><?php echo esc_html__('⚠️ Warning:', 'erm-pro'); ?></strong>
+                    <?php echo esc_html__('This action cannot be undone!', 'erm-pro'); ?>
+                </p>
+            </div>
+        </div>
+        <div class="erm-modal-footer">
+            <button type="button" class="button erm-modal-close-btn" data-action="cancel"><?php echo esc_html__('Cancel', 'erm-pro'); ?></button>
+            <button type="button" class="button button-primary" id="erm-settings-confirm-action"><?php echo esc_html__('Yes, Clear', 'erm-pro'); ?></button>
+        </div>
+    </div>
+</div>

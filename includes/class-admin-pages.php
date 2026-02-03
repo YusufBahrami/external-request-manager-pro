@@ -39,6 +39,15 @@ class ERM_Admin_Pages {
             'erm-pro-settings',
             [self::class, 'settings_page']
         );
+
+        add_submenu_page(
+            'erm-pro-logs',
+            __('Deleted', 'erm-pro'),
+            __('Deleted', 'erm-pro'),
+            'manage_options',
+            'erm-pro-deleted',
+            [self::class, 'deleted_page']
+        );
     }
     
     public static function enqueue_assets($hook_suffix) {
@@ -68,6 +77,31 @@ class ERM_Admin_Pages {
         if (isset($_GET['cleared'])) {
             echo '<div class="notice notice-success is-dismissible"><p>' . 
                  esc_html__('Logs cleared successfully.', 'erm-pro') . 
+                 '</p></div>';
+        }
+
+        // Show transient notifications (if enabled)
+        $enable_notifications = get_option('erm_pro_enable_notifications', true);
+        if ($enable_notifications) {
+            $notes = get_transient('erm_pro_notifications');
+            if (!empty($notes) && is_array($notes)) {
+                foreach ($notes as $n) {
+                    $host = isset($n['host']) ? esc_html($n['host']) : '';
+                    $msg = isset($n['message']) ? esc_html($n['message']) : '';
+                    echo '<div class="notice notice-info is-dismissible"><p>' . $msg . ' <strong>' . $host . '</strong></p></div>';
+                }
+                // remove after showing once
+                delete_transient('erm_pro_notifications');
+            }
+        }
+
+        // If DB version mismatch, show upgrade notice
+        $current_db_version = get_option('erm_pro_db_version', '');
+        if ($current_db_version !== ERM_PRO_DB_VERSION) {
+            $settings_link = admin_url('admin.php?page=erm-pro-settings');
+            echo '<div class="notice notice-warning is-dismissible"><p>' .
+                 esc_html__('Database schema is out of date for External Request Manager Pro.', 'erm-pro') . ' ' .
+                 sprintf('<a href="%s">%s</a>', esc_url($settings_link), esc_html__('Run DB Updater', 'erm-pro')) .
                  '</p></div>';
         }
     }
@@ -109,6 +143,32 @@ class ERM_Admin_Pages {
         $display_columns = get_option('erm_pro_display_columns', ['host', 'count', 'status', 'last_request']);
         
         require ERM_PRO_DIR . 'templates/settings.php';
+    }
+
+    public static function deleted_page() {
+        if (!current_user_can('manage_options')) {
+            wp_die(__('Permission denied', 'erm-pro'));
+        }
+
+        $paged = isset($_GET['paged']) ? max(1, (int) $_GET['paged']) : 1;
+        $per_page = get_option('erm_pro_per_page', 25);
+
+        global $wpdb;
+        $table = $wpdb->prefix . ERM_PRO_TABLE_DELETED;
+
+        $offset = ($paged - 1) * $per_page;
+
+        $total = (int) $wpdb->get_var("SELECT COUNT(*) FROM $table");
+        $data = $wpdb->get_results($wpdb->prepare("SELECT * FROM $table ORDER BY deleted_timestamp DESC LIMIT %d OFFSET %d", $per_page, $offset));
+
+        $results = [
+            'total' => $total,
+            'data' => $data,
+            'paged' => $paged,
+            'per_page' => $per_page,
+        ];
+
+        require ERM_PRO_DIR . 'templates/deleted.php';
     }
 }
 ?>

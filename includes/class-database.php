@@ -9,15 +9,16 @@ class ERM_Database {
         global $wpdb;
         require_once ABSPATH . 'wp-admin/includes/upgrade.php';
         
-        // Clean up old tables if upgrading from v1.x
+        // Clean up old tables if upgrading from v1.x (only during install)
         self::migrate_from_old_version();
-        
+
+        // Create or update tables
         self::create_requests_table();
         self::create_deleted_table();
         
-        // Store version
+        // Store versions
         update_option('erm_pro_version', ERM_PRO_VERSION);
-        update_option('erm_pro_db_version', ERM_PRO_VERSION);
+        update_option('erm_pro_db_version', ERM_PRO_DB_VERSION);
         
         // Initialize default settings
         if (!get_option('erm_pro_per_page')) {
@@ -26,6 +27,26 @@ class ERM_Database {
         if (!get_option('erm_pro_display_columns')) {
             update_option('erm_pro_display_columns', ['host', 'count', 'status', 'last_request']);
         }
+    }
+
+    /**
+     * Upgrade DB schema safely for existing installs without renaming legacy tables.
+     * This will run dbDelta to add missing columns/tables but will not attempt to
+     * rename or move user data.
+     */
+    public static function upgrade() {
+        global $wpdb;
+        require_once ABSPATH . 'wp-admin/includes/upgrade.php';
+
+        // Create or update tables (dbDelta will ALTER existing tables safely)
+        self::create_requests_table();
+        self::create_deleted_table();
+
+        // Update stored DB version (schema) and plugin version
+        update_option('erm_pro_db_version', ERM_PRO_DB_VERSION);
+        update_option('erm_pro_version', ERM_PRO_VERSION);
+
+        return true;
     }
     
     private static function migrate_from_old_version() {
@@ -60,6 +81,7 @@ class ERM_Database {
             response_code INT DEFAULT NULL,
             request_size BIGINT DEFAULT 0,
             response_time FLOAT DEFAULT 0,
+            response_body LONGTEXT DEFAULT NULL,
             source_file varchar(500) DEFAULT NULL,
             source_plugin varchar(255) DEFAULT NULL,
             source_theme varchar(255) DEFAULT NULL,
@@ -77,7 +99,8 @@ class ERM_Database {
             KEY is_blocked (is_blocked),
             KEY is_deleted (is_deleted),
             KEY last_timestamp (last_timestamp),
-            KEY request_count (request_count)
+            KEY request_count (request_count),
+            KEY host (host)
         ) $charset;";
         
         dbDelta($sql);
@@ -213,7 +236,7 @@ class ERM_Database {
             'deleted_timestamp' => current_time('mysql'),
             'deleted_by_user' => get_current_user_id(),
         ]);
-        
+
         if ($hard_delete) {
             return $wpdb->delete($table, ['id' => $id]);
         } else {
@@ -238,9 +261,14 @@ class ERM_Database {
             case 'unblock':
                 return $wpdb->query("UPDATE $table SET is_blocked = 0 WHERE id IN ($ids_list)");
             case 'delete':
-                // First unblock, then mark as deleted
-                $wpdb->query("UPDATE $table SET is_blocked = 0 WHERE id IN ($ids_list)");
-                return $wpdb->query("UPDATE $table SET is_deleted = 1 WHERE id IN ($ids_list)");
+                // For deletes we want to permanently remove rows and log them in the deleted table.
+                foreach ($ids as $id) {
+                    $id = (int) $id;
+                    // Ensure it's unblocked first and rate limits removed
+                    $wpdb->update($table, ['is_blocked' => 0, 'rate_limit_interval' => 0, 'rate_limit_calls' => 0], ['id' => $id]);
+                    self::delete_request($id, true);
+                }
+                return true;
             case 'restore':
                 return $wpdb->query("UPDATE $table SET is_deleted = 0 WHERE id IN ($ids_list)");
             default:
@@ -251,14 +279,28 @@ class ERM_Database {
     public static function clear_all_logs($except_blocked = false) {
         global $wpdb;
         $table = $wpdb->prefix . ERM_PRO_TABLE_REQUESTS;
+        $deleted_table = $wpdb->prefix . ERM_PRO_TABLE_DELETED;
+        $user_id = get_current_user_id();
         
         if ($except_blocked) {
-            // Only mark allowed entries as deleted
-            return $wpdb->query("UPDATE $table SET is_deleted = 1 WHERE is_blocked = 0");
+            // Log allowed entries to deleted table then delete them
+            $wpdb->query($wpdb->prepare(
+                "INSERT INTO $deleted_table (host, url_example, was_blocked, deleted_timestamp, deleted_by_user)
+                 SELECT host, url_example, is_blocked, NOW(), %d FROM $table WHERE is_blocked = 0 AND is_deleted = 0",
+                $user_id
+            ));
+
+            return $wpdb->query("DELETE FROM $table WHERE is_blocked = 0 AND is_deleted = 0");
         } else {
-            // Mark ALL entries as deleted AND unblock them
-            $wpdb->query("UPDATE $table SET is_blocked = 0, is_deleted = 1");
-            return true;
+            // Log all entries to deleted table, then delete them. Also ensure any block/rate-limit fields are cleared (rows removed).
+            $wpdb->query($wpdb->prepare(
+                "INSERT INTO $deleted_table (host, url_example, was_blocked, deleted_timestamp, deleted_by_user)
+                 SELECT host, url_example, is_blocked, NOW(), %d FROM $table WHERE is_deleted = 0",
+                $user_id
+            ));
+
+            $wpdb->query("UPDATE $table SET is_blocked = 0 WHERE is_deleted = 0");
+            return $wpdb->query("DELETE FROM $table WHERE is_deleted = 0");
         }
     }
     

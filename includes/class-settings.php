@@ -60,6 +60,18 @@ class ERM_Settings {
             'default' => 10
         ]);
         
+        register_setting(ERM_PRO_OPTION_GROUP, 'erm_pro_track_response', [
+            'type' => 'boolean',
+            'sanitize_callback' => [self::class, 'sanitize_checkbox'],
+            'default' => true
+        ]);
+
+        register_setting(ERM_PRO_OPTION_GROUP, 'erm_pro_max_response_body_length', [
+            'type' => 'integer',
+            'sanitize_callback' => [self::class, 'sanitize_max_response_body_length'],
+            'default' => 65536
+        ]);
+        
         // Add Settings Sections
         add_settings_section(
             'erm_pro_general',
@@ -138,6 +150,22 @@ class ERM_Settings {
             'erm-pro-settings',
             'erm_pro_display'
         );
+        
+        add_settings_field(
+            'erm_pro_track_response',
+            __('Track Response Code & Time', 'erm-pro'),
+            [self::class, 'field_track_response'],
+            'erm-pro-settings',
+            'erm_pro_display'
+        );
+
+        add_settings_field(
+            'erm_pro_max_response_body_length',
+            __('Max Response Body Length', 'erm-pro'),
+            [self::class, 'field_max_response_body_length'],
+            'erm-pro-settings',
+            'erm_pro_display'
+        );
     }
     
     // Sanitize Functions
@@ -158,6 +186,12 @@ class ERM_Settings {
     public static function sanitize_max_urls($value) {
         $value = (int) $value;
         return max(1, min(100, $value));
+    }
+
+    public static function sanitize_max_response_body_length($value) {
+        $value = (int) $value;
+        // Allow 0 to disable storing bodies, otherwise cap to 1MB
+        return max(0, min(1024 * 1024, $value));
     }
     
     public static function sanitize_columns($value) {
@@ -227,7 +261,7 @@ class ERM_Settings {
         ?>
         <label>
             <input type="checkbox" name="erm_pro_auto_clean" value="1" <?php echo $checked; ?>>
-            <span><?php _e('Automatically delete old logs daily', 'erm-pro'); ?></span>
+            <span><?php _e('Automatically delete old logs', 'erm-pro'); ?></span>
         </label>
         <p class="description">
             <?php _e('When enabled, logs older than the retention period will be permanently deleted automatically.', 'erm-pro'); ?>
@@ -267,6 +301,29 @@ class ERM_Settings {
         <input type="number" name="erm_pro_max_urls_logged" value="<?php echo esc_attr($value); ?>" 
                min="1" max="100" class="small-text">
         <span class="description"><?php _e('Maximum number of unique URLs to keep per request (1-100)', 'erm-pro'); ?></span>
+        <?php
+    }
+    
+    public static function field_track_response() {
+        $checked = get_option('erm_pro_track_response', true) ? 'checked' : '';
+        ?>
+        <label>
+            <input type="checkbox" name="erm_pro_track_response" value="1" <?php echo $checked; ?>>
+            <span><?php _e('Track HTTP Response Code & Time', 'erm-pro'); ?></span>
+        </label>
+        <p class="description">
+            <?php _e('When enabled, response codes (200, 404, etc.) will be recorded for each request. This helps monitor external service health.', 'erm-pro'); ?>
+        </p>
+        <?php
+    }
+
+    public static function field_max_response_body_length() {
+        $value = get_option('erm_pro_max_response_body_length', 65536);
+        ?>
+        <div>
+            <input type="number" name="erm_pro_max_response_body_length" value="<?php echo esc_attr($value); ?>" min="0" max="1048576" class="small-text">
+            <span class="description"><?php _e('Maximum number of bytes to store from response body. Set to 0 to disable saving response bodies (useful to save DB space). Default 65536 (64KB).', 'erm-pro'); ?></span>
+        </div>
         <?php
     }
 }

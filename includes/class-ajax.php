@@ -12,6 +12,7 @@ class ERM_AJAX {
         add_action('wp_ajax_erm_clear_logs', [self::class, 'clear_logs']);
         add_action('wp_ajax_erm_update_rate_limit', [self::class, 'update_rate_limit']);
         add_action('wp_ajax_erm_restore_deleted', [self::class, 'restore_deleted']);
+        add_action('wp_ajax_erm_run_db_upgrade', [self::class, 'run_db_upgrade']);
     }
     
     public static function toggle_block() {
@@ -36,7 +37,8 @@ class ERM_AJAX {
         
         wp_send_json_success([
             'message' => $new_status ? __('Blocked', 'erm-pro') : __('Allowed', 'erm-pro'),
-            'status' => $new_status
+            'status' => $new_status,
+            'counts' => ERM_Database::count_by_status()
         ]);
     }
     
@@ -59,12 +61,26 @@ class ERM_AJAX {
             wp_send_json_error(['message' => __('Invalid action', 'erm-pro')]);
         }
         
+        if ($action === 'delete') {
+            foreach ($ids as $id) {
+                $id = (int) $id;
+                ERM_Database::delete_request($id, true);
+            }
+
+            wp_send_json_success([
+                'message' => sprintf(__('%d items deleted', 'erm-pro'), count($ids)),
+                'count' => count($ids),
+                'counts' => ERM_Database::count_by_status()
+            ]);
+        }
+
         $result = ERM_Database::bulk_action($ids, $action);
-        
+
         if ($result !== false) {
             wp_send_json_success([
                 'message' => sprintf(__('%d items updated', 'erm-pro'), count($ids)),
-                'count' => count($ids)
+                'count' => count($ids),
+                'counts' => ERM_Database::count_by_status()
             ]);
         } else {
             wp_send_json_error(['message' => __('Action failed', 'erm-pro')]);
@@ -104,9 +120,18 @@ class ERM_AJAX {
             $source = __('WordPress Core', 'erm-pro');
         }
         
+        // Determine status - check for rate limit first (highest priority)
+        $status = __('Allowed', 'erm-pro');
+        if ($request->rate_limit_interval && $request->rate_limit_interval > 0) {
+            $status = __('Rate Limited', 'erm-pro');
+        } elseif ($request->is_blocked) {
+            $status = __('Blocked', 'erm-pro');
+        }
+        
         // Parse URLs log
         $urls_list = [];
-        if (!empty($request->urls_log)) {
+        $track_all_urls = get_option('erm_pro_track_all_urls', false);
+        if ($track_all_urls && !empty($request->urls_log)) {
             $urls_list = array_filter(array_map('trim', explode("\n", $request->urls_log)));
         }
         
@@ -118,17 +143,19 @@ class ERM_AJAX {
             'count' => $request->request_count,
             'first_request' => $request->first_timestamp,
             'last_request' => $request->last_timestamp,
-            'status' => $request->is_blocked ? __('Blocked', 'erm-pro') : __('Allowed', 'erm-pro'),
+            'status' => $status,
             'source' => $source,
             'source_plugin' => $request->source_plugin ?: '-',
             'source_theme' => $request->source_theme ?: '-',
             'source_file' => $request->source_file ?: '-',
             'request_size' => $request->request_size ? self::format_bytes($request->request_size) : '-',
-            'response_code' => $request->response_code ?: '-',
-            'response_time' => $time_calc ?: '-',
+            'response_code' => !empty($request->response_code) ? $request->response_code : '-',
+                'response_time' => $time_calc ?: '-',
+                'response_data' => !empty($request->response_body) ? $request->response_body : '',
             'rate_limit_interval' => $request->rate_limit_interval ?: 0,
             'is_blocked' => (bool) $request->is_blocked,
             'urls_list' => $urls_list,
+            'track_all_urls' => (bool) $track_all_urls,
         ]);
     }
     
@@ -143,10 +170,16 @@ class ERM_AJAX {
         
         if ($mode === 'except_blocked') {
             ERM_Database::clear_all_logs(true);
-            wp_send_json_success(['message' => __('All allowed logs cleared', 'erm-pro')]);
+            wp_send_json_success([
+                'message' => __('All allowed logs cleared', 'erm-pro'),
+                'counts' => ERM_Database::count_by_status()
+            ]);
         } elseif ($mode === 'all') {
             ERM_Database::clear_all_logs(false);
-            wp_send_json_success(['message' => __('All logs cleared', 'erm-pro')]);
+            wp_send_json_success([
+                'message' => __('All logs cleared', 'erm-pro'),
+                'counts' => ERM_Database::count_by_status()
+            ]);
         } else {
             wp_send_json_error(['message' => __('Invalid mode', 'erm-pro')]);
         }
@@ -196,6 +229,25 @@ class ERM_AJAX {
         $wpdb->update($table, ['is_deleted' => 0], ['id' => $id]);
         
         wp_send_json_success(['message' => __('Item restored', 'erm-pro')]);
+    }
+
+    public static function run_db_upgrade() {
+        check_ajax_referer('erm_nonce', 'nonce');
+
+        if (!current_user_can('manage_options')) {
+            wp_send_json_error(['message' => __('Permission denied', 'erm-pro')]);
+        }
+
+        $result = ERM_Database::upgrade();
+
+        if ($result) {
+            wp_send_json_success([
+                'message' => __('Database upgraded successfully.', 'erm-pro'),
+                'db_version' => get_option('erm_pro_db_version')
+            ]);
+        }
+
+        wp_send_json_error(['message' => __('Upgrade failed', 'erm-pro')]);
     }
     
     private static function format_bytes($bytes) {

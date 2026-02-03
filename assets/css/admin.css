@@ -355,6 +355,11 @@
     color: var(--erm-allowed);
 }
 
+.erm-status-badge.erm-rate-limited {
+    background: rgba(255, 193, 7, 0.1);
+    color: #ff9800;
+}
+
 .erm-status-badge .dashicons {
     width: 16px;
     height: 16px;
@@ -512,6 +517,7 @@
     display: flex;
     justify-content: flex-end;
     gap: 10px;
+    flex-direction: column;
 }
 
 /* ────────────────────────────────────────────────
@@ -568,6 +574,33 @@
     display: grid;
     grid-template-columns: 1fr 350px;
     gap: 20px;
+}
+
+/* Side panel wrapper */
+.erm-side-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    position: relative;
+}
+
+/* Highlight Database Updater */
+.erm-database-updater {
+    border: 1px solid rgba(34, 113, 177, 0.12);
+    background: linear-gradient(180deg, #f6fbff 0%, #fff 100%);
+    box-shadow: 0 4px 10px rgba(34,113,177,0.04);
+}
+
+.erm-database-updater h2 { color: var(--erm-primary); }
+.erm-database-updater .button { width: 100%; }
+
+/* Ensure maintenance and about boxes look like stacked cards */
+.erm-maintenance-section .erm-maintenance-box,
+.erm-about-section { display: block; }
+
+/* Make side panel sticky on wide screens */
+@media (min-width: 900px) {
+    .erm-side-panel { position: sticky; top: 20px; }
 }
 
 .erm-settings-form {
@@ -924,4 +957,26 @@
     outline: none;
     border-color: var(--erm-primary);
     box-shadow: 0 0 0 3px rgba(34, 113, 177, 0.1);
+}
+/* ────────────────────────────────────────────────
+   Warning Box
+   ──────────────────────────────────────────────── */
+
+.erm-warning-box {
+    padding: 12px 15px;
+    background: #fff8e5;
+    border-left: 4px solid #ffb81c;
+    border-radius: 4px;
+    margin: 15px 0;
+}
+
+.erm-warning-box p {
+    margin: 0;
+    color: #856404;
+    font-size: 14px;
+    line-height: 1.6;
+}
+
+.erm-warning-box strong {
+    font-weight: 600;
 }

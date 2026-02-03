@@ -1,11 +1,12 @@
 {
-  "name": "yourusername/external-request-manager-pro",
+  "name": "yusufbahrami/external-request-manager-pro",
+  "version": "2.5.3",
   "description": "Advanced external HTTP requests monitor, blocker & manager",
   "type": "wordpress-plugin",
   "license": "GPL-2.0+",
   "authors": [
     {
-      "name": "Yousuf Bahrami",
+      "name": "yusuf Bahrami",
       "email": "contact@wcoq.com",
       "homepage": "https://wcoq.com"
     }

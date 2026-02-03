@@ -188,17 +188,26 @@ if (!defined('ABSPATH')) exit;
                             
                             <?php if (in_array('status', $display_columns)): ?>
                                 <td class="erm-col-status">
-                                    <?php if ($request->is_blocked): ?>
-                                        <span class="erm-status-badge erm-blocked">
-                                            <span class="dashicons dashicons-shield"></span> 
-                                            <?php echo esc_html__('Blocked', 'erm-pro'); ?>
-                                        </span>
-                                    <?php else: ?>
-                                        <span class="erm-status-badge erm-allowed">
-                                            <span class="dashicons dashicons-yes-alt"></span> 
-                                            <?php echo esc_html__('Allowed', 'erm-pro'); ?>
-                                        </span>
-                                    <?php endif; ?>
+                                    <?php 
+                                        $status_class = 'erm-allowed';
+                                        $status_icon = 'dashicons-yes-alt';
+                                        $status_text = __('Allowed', 'erm-pro');
+                                        
+                                        // Check rate limit first (highest priority)
+                                        if ($request->rate_limit_interval && $request->rate_limit_interval > 0) {
+                                            $status_class = 'erm-rate-limited';
+                                            $status_icon = 'dashicons-clock';
+                                            $status_text = __('Rate Limited', 'erm-pro');
+                                        } elseif ($request->is_blocked) {
+                                            $status_class = 'erm-blocked';
+                                            $status_icon = 'dashicons-shield';
+                                            $status_text = __('Blocked', 'erm-pro');
+                                        }
+                                    ?>
+                                    <span class="erm-status-badge <?php echo esc_attr($status_class); ?>">
+                                        <span class="dashicons <?php echo esc_attr($status_icon); ?>"></span> 
+                                        <?php echo esc_html($status_text); ?>
+                                    </span>
                                 </td>
                             <?php endif; ?>
                             
@@ -219,10 +228,16 @@ if (!defined('ABSPATH')) exit;
                                     <button type="button" class="button button-small erm-review-btn" data-id="<?php echo esc_attr($request->id); ?>" title="<?php esc_attr_e('Review details', 'erm-pro'); ?>">
                                         <span class="dashicons dashicons-visibility"></span>
                                     </button>
-                                    <button type="button" class="button button-small erm-toggle-block-btn" data-id="<?php echo esc_attr($request->id); ?>" data-blocked="<?php echo esc_attr($request->is_blocked); ?>">
-                                        <?php echo $request->is_blocked ? esc_html__('Unblock', 'erm-pro') : esc_html__('Block', 'erm-pro'); ?>
-                                    </button>
-                                    <button type="button" class="button button-small button-link-delete erm-delete-btn" data-id="<?php echo esc_attr($request->id); ?>">
+                                    <?php if ($request->rate_limit_interval && $request->rate_limit_interval > 0): ?>
+                                        <button type="button" class="button button-small erm-remove-rate-limit-btn" data-id="<?php echo esc_attr($request->id); ?>" data-has-rate-limit="1">
+                                            <?php esc_html_e('Remove Rate Limit', 'erm-pro'); ?>
+                                        </button>
+                                    <?php else: ?>
+                                        <button type="button" class="button button-small erm-toggle-block-btn" data-id="<?php echo esc_attr($request->id); ?>" data-blocked="<?php echo esc_attr($request->is_blocked); ?>">
+                                            <?php echo $request->is_blocked ? esc_html__('Unblock', 'erm-pro') : esc_html__('Block', 'erm-pro'); ?>
+                                        </button>
+                                    <?php endif; ?>
+                                    <button type="button" class="button button-small button-link-delete erm-delete-btn" data-id="<?php echo esc_attr($request->id); ?>" data-has-rate-limit="<?php echo esc_attr($request->rate_limit_interval && $request->rate_limit_interval > 0 ? '1' : '0'); ?>" data-is-blocked="<?php echo esc_attr($request->is_blocked); ?>">
                                         <?php echo esc_html__('Delete', 'erm-pro'); ?>
                                     </button>
                                 </td>
@@ -277,14 +292,6 @@ if (!defined('ABSPATH')) exit;
         </div>
         <div class="erm-modal-footer">
             <div class="erm-detail-actions" id="erm-detail-actions" style="display:none; width:100%; text-align:left; border-top:1px solid #ddd; padding-top:15px; margin-bottom:15px;">
-                <div class="erm-urls-section" id="erm-urls-section" style="display:none; margin-bottom:20px;">
-                    <h3 style="margin-top:0;"><?php echo esc_html__('Logged URLs', 'erm-pro'); ?></h3>
-                    <select id="erm-urls-dropdown" class="erm-urls-dropdown" style="width:100%; padding:8px; border:1px solid #ddd; border-radius:4px; margin-bottom:10px; max-height:150px;">
-                        <option value=""><?php echo esc_html__('Select a logged URL', 'erm-pro'); ?></option>
-                    </select>
-                    <div id="erm-selected-url-display" style="padding:8px; background:#f5f5f5; border-radius:4px; font-family:monospace; font-size:12px; word-break:break-all; display:none; margin-bottom:10px;"></div>
-                </div>
-                
                 <div class="erm-rate-limit-section" style="margin-bottom:20px;">
                     <h3 style="margin-top:0;"><?php echo esc_html__('Rate Limiting', 'erm-pro'); ?></h3>
                     <p><?php echo esc_html__('Allow this host to connect once every (seconds):', 'erm-pro'); ?></p>
